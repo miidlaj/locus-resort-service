@@ -1,0 +1,28 @@
+server:
+  port: 9001
+
+
+spring:
+  # Datasource properties
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    username: admin
+    url: jdbc:postgresql://localhost:5432/resort_db?currentSchema=sc_resort&ssl=false
+    password: '1234'
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+  # Name of the Application
+  application:
+    name: RESORT-SERVICE
+  graphql:
+    cors:
+      allowed-origins: http://localhost:3000,http://localhost:4000
+
+service:
+  security-secure-key-password: randomSecureKeyPassword!
+  security-secure-key-username: randomSecureKeyUsername!
+
