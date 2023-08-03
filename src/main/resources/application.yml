@@ -6,8 +6,8 @@ spring:
   # Datasource properties
   datasource:
     driver-class-name: org.postgresql.Driver
-    username: postgres
-    url: jdbc:postgresql://locushaunt-posgresql.cts5zbx6unos.ap-south-1.rds.amazonaws.com:5431/resort_db?currentSchema=sc_resort&ssl=false
+    username: root
+    url: jdbc:postgresql://database-2.crttgwzqvw36.ap-south-1.rds.amazonaws.com:5432/resort_db?currentSchema=sc_resort&ssl=false
     password: 12345678
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
@@ -32,6 +32,6 @@ eureka:
     register-with-eureka: true
     fetch-registry: true
     service-url:
-      defaultZone: http://43.204.232.113:8761/eureka/
+      defaultZone: http://15.206.125.179:8761/eureka/
   instance:
-    hostname: 43.204.232.113
+    hostname: 15.206.125.179
