@@ -11,6 +11,14 @@ import java.util.Set;
 
 @Entity
 @Table(name = "resort")
+@NamedStoredProcedureQuery(
+		name = "getUserIdByResortId",
+		procedureName = "get_user_id_by_resort_id",
+		parameters = {
+				@StoredProcedureParameter(mode = ParameterMode.IN, type = Long.class, name = "_resort_id"),
+				@StoredProcedureParameter(mode = ParameterMode.OUT, type = Long.class, name = "user_id")
+		}
+)
 public class Resort {
 
     @Id

@@ -4,6 +4,8 @@ import com.midlaj.resort.entity.Resort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.query.Procedure;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -26,4 +28,10 @@ public interface ResortRepository extends JpaRepository<Resort, Long> {
     @Query("UPDATE Resort r SET r.enabled = ?2  WHERE r.id = ?1")
     @Modifying
     void changeEnabledStatus(Long id, Boolean banStatus);
+
+    List<Resort> findResortsByLocationDetails_LocationContainingAndIsAdminApprovedTrueAndIsBannedFalseAndEnabledTrue(String location);
+
+
+    @Procedure(name = "getUserIdByResortId")
+    Long getUserIdByResortId(@Param("_resort_id") Long resortId);
 }

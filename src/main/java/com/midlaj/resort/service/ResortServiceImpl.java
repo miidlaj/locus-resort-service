@@ -4,28 +4,35 @@ import com.midlaj.resort.dao.ResortDAO;
 import com.midlaj.resort.dto.request.ImageUploadDTO;
 import com.midlaj.resort.dto.request.ResortLocationDetailsDTO;
 import com.midlaj.resort.dto.request.ResortRequestDTO;
+import com.midlaj.resort.dto.request.ResortSearchDTO;
 import com.midlaj.resort.dto.response.ResortDetailsDTO;
+import com.midlaj.resort.dto.response.ResortDetailsForUserDTO;
 import com.midlaj.resort.dto.response.ResortListAllDTO;
+import com.midlaj.resort.dto.response.ResortSearchResponseDTO;
 import com.midlaj.resort.entity.*;
 import com.midlaj.resort.repository.CategoryRepository;
 import com.midlaj.resort.repository.FacilityRepository;
 import com.midlaj.resort.repository.ResortRepository;
+import com.midlaj.resort.repository.ResortStoredRepo;
 import com.midlaj.resort.util.AmazonS3Util;
 import com.midlaj.resort.util.Constants;
 import com.midlaj.resort.util.CustomMultipartFile;
 import com.midlaj.resort.util.ImageUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -36,6 +43,9 @@ public class ResortServiceImpl implements ResortService {
     private ResortRepository resortRepository;
 
     @Autowired
+    private ResortStoredRepo resortStoredRepo;
+
+    @Autowired
     private CategoryRepository categoryRepository;
 
     @Autowired
@@ -43,6 +53,13 @@ public class ResortServiceImpl implements ResortService {
 
     @Autowired
     private ResortDAO resortDAO;
+
+
+    @Value("${service.wallet}")
+    private String WALLET_SERVICE;
+
+    @Autowired
+    private RestTemplate restTemplate;
 
     @Override
     public ResponseEntity<?> saveResort(ResortRequestDTO requestDTO) {
@@ -322,7 +339,17 @@ public class ResortServiceImpl implements ResortService {
         if (optionalResort.isEmpty()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Cannot find Resort.");
         }
+
         resortRepository.approveResort(id);
+        String url = WALLET_SERVICE + "/create/" + optionalResort.get().getUserId();
+        System.out.println(url);
+        ResponseEntity<String> response = null;
+        try {
+            response = restTemplate.getForEntity(url, String.class);
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+
 
         return ResponseEntity.ok("Successfully approved Resort.");
     }
@@ -355,6 +382,85 @@ public class ResortServiceImpl implements ResortService {
         Resort resort = resortDAO.findResortById(id);
         resortDAO.changeEnabledStatus(resort.getId(), !resort.getEnabled());
         return ResponseEntity.ok("Successfully changed the Enable status");
+    }
+
+    @Override
+    public ResponseEntity<?> getResortsWithSearchFilters(ResortSearchDTO resortSearchDTO) {
+        List<Resort> resortsInDB = resortRepository.findResortsByLocationDetails_LocationContainingAndIsAdminApprovedTrueAndIsBannedFalseAndEnabledTrue(resortSearchDTO.getPlace());
+
+        Long[] categoryNeeded = resortSearchDTO.getCategories();
+        Long[] facilitiesNeeded = resortSearchDTO.getFacilities();
+
+        List<ResortSearchResponseDTO> resorts = new ArrayList<>();
+
+        if (facilitiesNeeded.length == 0 && categoryNeeded.length == 0) {
+            resortsInDB.forEach(resort -> {
+                resorts.add(buildSearchResortDTO(resort));
+            });
+        } else {
+            resortsInDB.forEach(resort -> {
+
+                if (categoryNeeded.length != 0 && facilitiesNeeded.length != 0){
+
+                    boolean catMatched = Arrays.stream(categoryNeeded).anyMatch(cat -> cat == resort.getCategory().getId());
+                    boolean facMatched = Arrays.stream(facilitiesNeeded).anyMatch(fac -> resort.getFacilities().stream().anyMatch(resortFacility -> fac == resortFacility.getId()));
+
+                    if (catMatched && facMatched) {
+                        resorts.add(buildSearchResortDTO(resort));
+                    }
+                } else if (categoryNeeded.length == 0) {
+                    boolean facMatched = Arrays.stream(facilitiesNeeded).anyMatch(fac -> resort.getFacilities().stream().anyMatch(resortFacility -> fac == resortFacility.getId()));
+
+                    if (facMatched) resorts.add(buildSearchResortDTO(resort));
+                } else if (facilitiesNeeded.length == 0 ) {
+                    boolean catMatched = Arrays.stream(categoryNeeded).anyMatch(cat -> cat == resort.getCategory().getId());
+
+                    if (catMatched) resorts.add(buildSearchResortDTO(resort));
+                }
+
+            });
+        }
+
+        return ResponseEntity.ok(resorts);
+    }
+
+    @Override
+    public ResponseEntity<?> getResortDetailsForUser(Long id) {
+        Resort resort = resortDAO.findResortById(id);
+
+        ResortDetailsForUserDTO resortDetailsForUserDTO = ResortDetailsForUserDTO.builder()
+                .facilities(resort.getFacilities())
+                .category(resort.getCategory())
+                .build();
+        resortDetailsForUserDTO.setDtoOfResortImages(resort.getImages());
+        return ResponseEntity.ok(resortDetailsForUserDTO);
+    }
+
+    @Override
+    public ResponseEntity<?> getUserIdUsingResortId(Long resortId) {
+        log.info("Inside the getUserIdUsingResortId in ResortServiceImpl");
+
+        //Long userId = resortRepository.getUserIdByResortId(resortId);
+        Long userId = resortStoredRepo.getUserIdByResortId(resortId);
+        return ResponseEntity.status(HttpStatus.FOUND).body(userId);
+    }
+
+    private ResortSearchResponseDTO buildSearchResortDTO(Resort resort) {
+        String[] facilities = new String[resort.getFacilities().size()];
+        resort.getFacilities().stream().map(facility -> facility.getName()).collect(Collectors.toList()).toArray(facilities);
+        ResortSearchResponseDTO responseDTO = ResortSearchResponseDTO
+                .builder()
+                .id(resort.getId())
+                .resortAddress(resort.getResortAddress())
+                .description(resort.getDescription())
+                .name(resort.getName())
+                .category(resort.getCategory().getName())
+                .facilities(facilities)
+                .locationDetails(resort.getLocationDetails())
+                .defaultImageLink(resort.getDefaultImageUrl())
+                .build();
+
+        return responseDTO;
     }
 
     private List<ResortListAllDTO> buildResortDTO(List<Resort> resorts) {

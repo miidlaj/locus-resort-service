@@ -3,6 +3,7 @@ package com.midlaj.resort.service;
 import com.midlaj.resort.dto.request.ImageUploadDTO;
 import com.midlaj.resort.dto.request.ResortLocationDetailsDTO;
 import com.midlaj.resort.dto.request.ResortRequestDTO;
+import com.midlaj.resort.dto.request.ResortSearchDTO;
 import com.midlaj.resort.entity.Resort;
 import org.springframework.http.ResponseEntity;
 
@@ -33,4 +34,10 @@ public interface ResortService {
     ResponseEntity<?> approveResort(Long id);
 
     ResponseEntity<?> changeEnabledStatus(Long id);
+
+    ResponseEntity<?> getResortsWithSearchFilters(ResortSearchDTO resortSearchDTO);
+
+    ResponseEntity<?> getResortDetailsForUser(Long id);
+
+    ResponseEntity<?> getUserIdUsingResortId(Long resortId);
 }

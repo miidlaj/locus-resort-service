@@ -6,9 +6,9 @@ spring:
   # Datasource properties
   datasource:
     driver-class-name: org.postgresql.Driver
-    username: admin
-    url: jdbc:postgresql://localhost:5432/resort_db?currentSchema=sc_resort&ssl=false
-    password: '1234'
+    username: postgres
+    url: jdbc:postgresql://locushaunt-posgresql.cts5zbx6unos.ap-south-1.rds.amazonaws.com:5431/resort_db?currentSchema=sc_resort&ssl=false
+    password: 12345678
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
@@ -20,9 +20,18 @@ spring:
     name: RESORT-SERVICE
   graphql:
     cors:
-      allowed-origins: http://localhost:3000,http://localhost:4000
+      allowed-origins: http://localhost:3000,http://localhost:4000,https://main.d26bdakkr07ep9.amplifyapp.com,https://locus-frontend-admin.onrender.com
 
 service:
   security-secure-key-password: randomSecureKeyPassword!
   security-secure-key-username: randomSecureKeyUsername!
+  wallet: http://BOOKING-SERVICE/api/wallet
 
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://43.204.232.113:8761/eureka/
+  instance:
+    hostname: 43.204.232.113
