@@ -27,11 +27,11 @@ service:
   security-secure-key-username: randomSecureKeyUsername!
   wallet: http://BOOKING-SERVICE/api/wallet
 
-eureka:
-  client:
-    register-with-eureka: true
-    fetch-registry: true
-    service-url:
-      defaultZone: http://15.206.125.179:8761/eureka/
-  instance:
-    hostname: 15.206.125.179
+# eureka:
+#   client:
+#     register-with-eureka: true
+#     fetch-registry: true
+#     service-url:
+#       defaultZone: http://15.206.125.179:8761/eureka/
+#   instance:
+#     hostname: 15.206.125.179
