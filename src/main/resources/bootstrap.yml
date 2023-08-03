@@ -3,4 +3,4 @@ spring:
   cloud:
     config:
       enabled: true
-      uri: http://3.110.168.87
+      uri: http://15.206.125.179:9000
